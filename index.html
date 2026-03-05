@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Casa">
+<meta name="theme-color" content="#2c2416">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>🏠 Manutenção da Casa</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fraunces:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf7f2;
+    --surface: #ffffff;
+    --border: #e8e0d5;
+    --text: #2c2416;
+    --muted: #9d8f7e;
+    --soft: #f3ede4;
+    --daily: #e8632a;
+    --daily-bg: #fef2ec;
+    --daily-border: #fad7c2;
+    --weekly: #2a7ae8;
+    --weekly-bg: #edf3fe;
+    --weekly-border: #c2d7fa;
+    --heavy: #8b2ae8;
+    --heavy-bg: #f5edfe;
+    --heavy-border: #d8c2fa;
+    --cat: #e8a82a;
+    --cat-bg: #fef8ec;
+    --cat-border: #faeac2;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    padding-bottom: calc(70px + var(--safe-bottom));
+    overscroll-behavior: none;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--text);
+    color: white;
+    padding: calc(16px + var(--safe-top)) 20px 18px;
+  }
+
+  .header-title {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .header-date {
+    font-size: 12px;
+    opacity: 0.5;
+    margin-top: 3px;
+    font-weight: 600;
+  }
+
+  .progress-strip {
+    background: var(--text);
+    padding: 0 20px 18px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .prog { flex: 1; background: rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 12px; }
+  .prog-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.5); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .prog-label span:last-child { color: white; }
+  .prog-bar-bg { height: 5px; background: rgba(255,255,255,0.12); border-radius: 10px; }
+  .prog-bar-fill { height: 5px; border-radius: 10px; transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  .prog-bar-fill.d { background: linear-gradient(90deg, #ff9a6a, var(--daily)); }
+  .prog-bar-fill.w { background: linear-gradient(90deg, #6aadff, var(--weekly)); }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1.5px solid var(--border);
+    display: flex;
+    padding-bottom: var(--safe-bottom);
+    z-index: 100;
+  }
+
+  .nav-btn {
+    flex: 1;
+    padding: 10px 4px 8px;
+    background: none;
+    border: none;
+    font-family: 'Nunito', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .nav-btn .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+  .nav-btn.active { color: var(--text); }
+  .nav-btn.active.daily { color: var(--daily); }
+  .nav-btn.active.weekly { color: var(--weekly); }
+  .nav-btn.active.heavy { color: var(--heavy); }
+
+  /* PANELS */
+  .panel { display: none; padding: 14px 14px 0; }
+  .panel.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; }
+
+  .card-header {
+    padding: 10px 14px 9px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  /* ITEMS */
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .item:last-child { border-bottom: none; }
+  .item:active { background: var(--soft); }
+  .item.done { background: var(--soft); }
+  .item.done .item-name { text-decoration: line-through; color: var(--muted); }
+  .item.done .hint { opacity: 0.4; }
+
+  .checkbox {
+    width: 24px; height: 24px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-size: 13px;
+    font-weight: 900;
+    transition: all 0.18s;
+    color: white;
+  }
+
+  .daily-scope .checkbox { border-color: var(--daily-border); }
+  .weekly-scope .checkbox { border-color: var(--weekly-border); }
+  .heavy-scope .checkbox { border-color: var(--heavy-border); }
+  .cat-scope .checkbox { border-color: var(--cat-border); }
+
+  .daily-scope .item.done .checkbox { background: var(--daily); border-color: var(--daily); }
+  .weekly-scope .item.done .checkbox { background: var(--weekly); border-color: var(--weekly); }
+  .heavy-scope .item.done .checkbox { background: var(--heavy); border-color: var(--heavy); }
+  .cat-scope .item.done .checkbox { background: var(--cat); border-color: var(--cat); }
+
+  .item-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .hint { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 3px; line-height: 1.5; display: flex; gap: 5px; }
+  .hint::before { content: '·'; color: var(--border); font-size: 14px; line-height: 1; flex-shrink: 0; }
+
+  /* TIP */
+  .tip-box { margin-bottom: 12px; background: var(--cat-bg); border: 1.5px solid var(--cat-border); border-radius: 12px; padding: 10px 14px; font-size: 12px; color: #7a5a00; font-weight: 700; display: flex; gap: 8px; align-items: flex-start; }
+
+  /* GOLDEN RULE */
+  .golden { background: var(--text); color: white; border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+  .golden-title { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .golden-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .golden-item { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 8px 10px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .golden-item span { font-size: 15px; }
+
+  /* WEEK NAV */
+  .week-nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
+  .week-nav::-webkit-scrollbar { display: none; }
+
+  .day-btn {
+    flex-shrink: 0; width: 44px; padding: 8px 4px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 12px; font-family: 'Nunito', sans-serif;
+    font-size: 10px; font-weight: 800; color: var(--muted);
+    cursor: pointer; text-align: center; transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .day-btn .dn { display: block; font-size: 15px; font-weight: 900; color: var(--text); margin-bottom: 1px; }
+  .day-btn.active { background: var(--weekly); border-color: var(--weekly); color: rgba(255,255,255,0.7); }
+  .day-btn.active .dn { color: white; }
+  .day-btn.done-day { background: var(--weekly-bg); border-color: var(--weekly-border); color: var(--weekly); }
+  .day-btn.done-day .dn { color: var(--weekly); }
+
+  .day-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--weekly-bg); border: 1.5px solid var(--weekly-border); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 800; color: var(--weekly); margin-bottom: 10px; }
+  .day-pill.today { background: var(--weekly); color: white; border-color: var(--weekly); }
+
+  /* STEPS */
+  .step { display: flex; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; -webkit-user-select: none; transition: background 0.12s; }
+  .step:last-child { border-bottom: none; }
+  .step:active { background: var(--soft); }
+  .step.done .step-text { text-decoration: line-through; color: var(--muted); }
+  .step.done .step-num { background: var(--heavy); color: white; }
+  .step-num { width: 22px; height: 22px; border-radius: 7px; background: var(--heavy-bg); color: var(--heavy); font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; transition: all 0.18s; }
+  .step-text { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.4; padding-top: 2px; }
+
+  /* RESET */
+  .reset-btn { width: 100%; padding: 12px; background: transparent; border: 1.5px dashed var(--border); border-radius: 12px; color: var(--muted); font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 800; cursor: pointer; margin-bottom: 12px; transition: all 0.15s; }
+  .reset-btn:active { background: var(--soft); }
+
+  /* CONFETTI */
+  .cfwrap { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
+  .cp { position: absolute; width: 7px; height: 7px; border-radius: 2px; animation: fall 1.6s ease-in forwards; }
+  @keyframes fall { 0%{transform:translateY(-10px) rotate(0deg);opacity:1} 100%{transform:translateY(105vh) rotate(540deg);opacity:0} }
+
+  /* INSTALL BANNER */
+  .install-banner { margin: 0 0 12px; background: #edf3fe; border: 1.5px solid #c2d7fa; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .install-banner .ib-text { flex: 1; font-size: 12px; font-weight: 700; color: #1a4a8a; line-height: 1.4; }
+  .install-banner .ib-btn { background: var(--weekly); color: white; border: none; border-radius: 10px; padding: 7px 12px; font-family: 'Nunito', sans-serif; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+  .install-banner .ib-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">🏠 Manutenção da Casa</div>
+  <div class="header-date" id="headerDate"></div>
+</div>
+
+<div class="progress-strip">
+  <div class="prog">
+    <div class="prog-label"><span>DIÁRIO</span><span id="dPct">0%</span></div>
+    <div class="prog-bar-bg"><div class="prog-bar-fill d" id="dBar" style="width:0%"></div></div>
+  </div>
+  <div class="prog">
+    <div class="prog-label"><span>SEMANAL</span><span id="wPct">0%</span></div>
+    <div class="prog-bar-bg"><div class="prog-bar-fill w" id="wBar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- ===== DIÁRIO ===== -->
+<div class="panel active" id="panel-daily">
+
+  <div id="installBanner" class="install-banner" style="display:none">
+    <div class="ib-text">📲 Adicione à tela inicial para usar como app!</div>
+    <button class="ib-btn" onclick="showInstallHelp()">Como fazer</button>
+    <button class="ib-close" onclick="dismissBanner()">×</button>
+  </div>
+
+  <div class="golden">
+    <div class="golden-title">📊 Regra de ouro — 80% já resolvido</div>
+    <div class="golden-grid">
+      <div class="golden-item"><span>🍽️</span> Louça limpa</div>
+      <div class="golden-item"><span>🐱</span> Caixinha limpa</div>
+      <div class="golden-item"><span>🌀</span> Aspirador</div>
+      <div class="golden-item"><span>📦</span> Objetos no lugar</div>
+    </div>
+  </div>
+
+  <div class="card daily-scope">
+    <div class="card-header" style="background:var(--daily-bg);color:var(--daily);border-bottom-color:var(--daily-border)">1️⃣ Louça & Cozinha</div>
+    <div class="item" onclick="toggle(this,'daily')">
+      <div class="checkbox"></div>
+      <div><div class="item-name">Lavar louça / organizar pia</div>
+        <div class="hint">Não deixar louça acumulada</div>
+        <div class="hint">Secar bancada da cozinha</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card cat-scope">
+    <div class="card-header" style="background:var(--cat-bg);color:#b87800;border-bottom-color:var(--cat-border)">
+      2️⃣ Caixinha dos Gatos &nbsp;<span style="font-size:10px;background:var(--cat);color:white;border-radius:6px;padding:2px 7px;">OBRIGATÓRIO</span>
+    </div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Retirar fezes e torrões de urina</div></div></div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Mexer a areia para ventilar</div></div></div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Completar areia se necessário</div></div></div>
+  </div>
+
+  <div class="tip-box"><span>💡</span><span>1x por semana: trocar toda a areia e lavar a caixa completamente.</span></div>
+
+  <div class="card daily-scope">
+    <div class="card-header" style="background:var(--daily-bg);color:var(--daily);border-bottom-color:var(--daily-border)">3️⃣ Organização rápida (5–10 min)</div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Guardar objetos fora do lugar</div></div></div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Arrumar sofá</div></div></div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Arrumar cama</div></div></div>
+  </div>
+
+  <div class="card daily-scope">
+    <div class="card-header" style="background:var(--daily-bg);color:var(--daily);border-bottom-color:var(--daily-border)">4️⃣ Aspirador rápido</div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Sala</div></div></div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Cozinha</div></div></div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Locais onde os gatos ficam</div></div></div>
+  </div>
+
+  <div class="card daily-scope">
+    <div class="card-header" style="background:var(--daily-bg);color:var(--daily);border-bottom-color:var(--daily-border)">5️⃣ Lixo</div>
+    <div class="item" onclick="toggle(this,'daily')"><div class="checkbox"></div><div><div class="item-name">Tirar lixo da cozinha se cheio</div></div></div>
+  </div>
+
+  <button class="reset-btn" onclick="resetDaily()">↺ Resetar checklist diário</button>
+</div>
+
+<!-- ===== SEMANAL ===== -->
+<div class="panel" id="panel-weekly">
+  <div class="week-nav" id="weekNav"></div>
+  <div id="weekContent"></div>
+  <button class="reset-btn" onclick="resetWeekly()">↺ Resetar semana inteira</button>
+</div>
+
+<!-- ===== SÁBADO ===== -->
+<div class="panel" id="panel-heavy">
+  <div class="card heavy-scope" style="border-color:var(--heavy-border)">
+    <div class="card-header" style="background:var(--heavy-bg);color:var(--heavy);border-bottom-color:var(--heavy-border)">💦 Limpeza Pesada — Sábado</div>
+    <div class="item" onclick="toggle(this,'heavy')"><div class="checkbox"></div><div><div class="item-name">Jogar água na varanda</div></div></div>
+    <div class="item" onclick="toggle(this,'heavy')"><div class="checkbox"></div><div><div class="item-name">Lavar banheiro completo</div></div></div>
+    <div class="item" onclick="toggle(this,'heavy')"><div class="checkbox"></div><div><div class="item-name">Lavar lavanderia</div></div></div>
+    <div class="item" onclick="toggle(this,'heavy')"><div class="checkbox"></div><div><div class="item-name">Pano úmido geral na casa</div></div></div>
+  </div>
+  <button class="reset-btn" onclick="resetPanel('heavy', heavyKey)">↺ Resetar limpeza pesada</button>
+</div>
+
+<!-- ===== TÊNIS ===== -->
+<div class="panel" id="panel-shoes">
+  <div class="tip-box"><span>💡</span><span>1x por semana ou quando usar muito. Deixe escova + sabão neutro separados só para isso.</span></div>
+  <div class="card" style="border-color:var(--heavy-border)">
+    <div class="card-header" style="background:var(--heavy-bg);color:var(--heavy);border-bottom-color:var(--heavy-border)">👟 Passo a passo — Limpeza de Tênis</div>
+    <div id="shoeSteps">
+      <div class="step" onclick="toggleStep(this)"><div class="step-num">1</div><div class="step-text">Retirar palmilha</div></div>
+      <div class="step" onclick="toggleStep(this)"><div class="step-num">2</div><div class="step-text">Escovar sola com água e sabão neutro</div></div>
+      <div class="step" onclick="toggleStep(this)"><div class="step-num">3</div><div class="step-text">Escova macia no tecido</div></div>
+      <div class="step" onclick="toggleStep(this)"><div class="step-num">4</div><div class="step-text">Enxaguar com pano úmido</div></div>
+      <div class="step" onclick="toggleStep(this)"><div class="step-num">5</div><div class="step-text">Secar na sombra</div></div>
+    </div>
+  </div>
+  <button class="reset-btn" onclick="resetShoes()">↺ Resetar passos</button>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-btn active daily" id="nav-daily" onclick="switchTab('daily',this)">
+    <span class="nav-icon">☀️</span>Diário
+  </button>
+  <button class="nav-btn weekly" id="nav-weekly" onclick="switchTab('weekly',this)">
+    <span class="nav-icon">📅</span>Semanal
+  </button>
+  <button class="nav-btn heavy" id="nav-heavy" onclick="switchTab('heavy',this)">
+    <span class="nav-icon">💦</span>Sábado
+  </button>
+  <button class="nav-btn" id="nav-shoes" onclick="switchTab('shoes',this)">
+    <span class="nav-icon">👟</span>Tênis
+  </button>
+</div>
+
+<div class="cfwrap" id="cfwrap"></div>
+
+<!-- INSTALL MODAL -->
+<div id="installModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;padding:20px;align-items:flex-end;">
+  <div style="background:white;border-radius:20px;padding:24px;max-width:400px;margin:0 auto;width:100%">
+    <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;margin-bottom:16px">📲 Adicionar à tela inicial</div>
+    <div style="font-size:14px;line-height:1.7;color:#444;font-weight:600">
+      <div style="margin-bottom:10px">No <strong>Safari</strong> do iPhone:</div>
+      <div style="background:#f5f5f5;border-radius:12px;padding:12px 14px;font-size:13px;line-height:2">
+        1. Toque no ícone <strong>compartilhar</strong> (□↑) na barra inferior<br>
+        2. Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong><br>
+        3. Toque em <strong>"Adicionar"</strong> no canto superior direito
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:#999">O app aparecerá na sua tela inicial como qualquer outro app, funciona offline!</div>
+    </div>
+    <button onclick="document.getElementById('installModal').style.display='none'" style="width:100%;margin-top:16px;padding:14px;background:#2c2416;color:white;border:none;border-radius:12px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer">Entendi!</button>
+  </div>
+</div>
+
+<script>
+// ── DATES ──
+const now = new Date();
+const dNames = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const mNames = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+document.getElementById('headerDate').textContent = `${dNames[now.getDay()]}, ${now.getDate()} de ${mNames[now.getMonth()]} de ${now.getFullYear()}`;
+
+function getWeek(d) {
+  const dt = new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const day = dt.getUTCDay()||7; dt.setUTCDate(dt.getUTCDate()+4-day);
+  const ys = new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  return Math.ceil((((dt-ys)/86400000)+1)/7);
+}
+
+const todayKey = `casa-d-${now.toDateString()}`;
+const weekKey  = `casa-w-${getWeek(now)}-${now.getFullYear()}`;
+const heavyKey = `casa-h-w${getWeek(now)}-${now.getFullYear()}`;
+const shoesKey = `casa-s-${now.toDateString()}`;
+
+function ls(k){ try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return{};} }
+function ss(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+
+let state = { daily: ls(todayKey), weekly: ls(weekKey), heavy: ls(heavyKey), shoes: ls(shoesKey) };
+
+// ── TOGGLE ITEM ──
+function toggle(el, type) {
+  const id = el.querySelector('.item-name').textContent.trim();
+  state[type][id] = !state[type][id];
+  applyItem(el, state[type][id]);
+  ss(type==='daily'?todayKey:type==='heavy'?heavyKey:weekKey, state[type]);
+  updateProgress();
+  if(type==='weekly') renderWeekNav();
+}
+
+function applyItem(el, done) {
+  el.classList.toggle('done', done);
+  el.querySelector('.checkbox').textContent = done ? '✓' : '';
+}
+
+// ── TOGGLE STEP ──
+function toggleStep(el) {
+  el.classList.toggle('done');
+  const id = el.querySelector('.step-text').textContent.trim();
+  state.shoes[id] = el.classList.contains('done');
+  ss(shoesKey, state.shoes);
+}
+
+// ── INIT ──
+function initItems() {
+  document.querySelectorAll('#panel-daily .item, #panel-heavy .item').forEach(el => {
+    const type = el.closest('#panel-heavy') ? 'heavy' : 'daily';
+    const id = el.querySelector('.item-name').textContent.trim();
+    if(state[type][id]) applyItem(el, true);
+  });
+  document.querySelectorAll('#shoeSteps .step').forEach(el => {
+    const id = el.querySelector('.step-text').textContent.trim();
+    if(state.shoes[id]) el.classList.add('done');
+  });
+}
+
+// ── WEEKLY DATA ──
+const WEEKS = [
+  null,
+  { label: 'Seg', room: '🧼 Banheiro', tasks: ['Limpar vaso sanitário','Limpar pia do banheiro','Limpar box / chuveiro','Limpar espelho','Passar pano no chão'] },
+  { label: 'Ter', room: '🧺 Lavanderia', tasks: ['Limpar máquina por fora','Organizar produtos de limpeza','Varrer / pano no chão'] },
+  { label: 'Qua', room: '🍳 Cozinha', tasks: ['Limpar fogão','Limpar microondas','Limpar geladeira por fora','Limpar armários por fora'] },
+  { label: 'Qui', room: '🛋 Sala', tasks: ['Aspirar sala completa','Limpar móveis','Limpar TV'] },
+  { label: 'Sex', room: '🌿 Varanda', tasks: ['Varrer varanda','Passar pano no chão','Organizar plantas / móveis'] },
+  { label: 'Sáb', room: '🛏 Quartos (2)', tasks: ['Trocar roupa de cama — quarto 1','Trocar roupa de cama — quarto 2','Aspirar quartos','Tirar pó dos móveis'] },
+];
+const DAY_LETTERS = ['D','S','T','Q','Q','S','S'];
+
+let currentWeekDay = now.getDay();
+if (currentWeekDay === 0) currentWeekDay = 1;
+
+function isDayDone(d) {
+  const info = WEEKS[d]; if(!info) return false;
+  return info.tasks.every(t => state.weekly[d+':'+t]);
+}
+
+function renderWeekNav() {
+  const nav = document.getElementById('weekNav');
+  nav.innerHTML = '';
+  for(let i=1;i<=6;i++){
+    const btn = document.createElement('button');
+    btn.className = 'day-btn' + (i===currentWeekDay?' active':'') + (isDayDone(i)?' done-day':'');
+    btn.innerHTML = `<span class="dn">${DAY_LETTERS[i]}</span>${WEEKS[i].label}`;
+    const day = i;
+    btn.onclick = () => { currentWeekDay=day; renderWeekNav(); renderWeekContent(day); };
+    nav.appendChild(btn);
+  }
+}
+
+function renderWeekContent(d) {
+  const container = document.getElementById('weekContent');
+  const info = WEEKS[d];
+  container.innerHTML = '';
+  const isToday = d === now.getDay();
+
+  const pill = document.createElement('div');
+  pill.className = 'day-pill' + (isToday?' today':'');
+  pill.textContent = (isToday?'📍 ':'')+info.room;
+  container.appendChild(pill);
+
+  const card = document.createElement('div');
+  card.className = 'card weekly-scope'; card.style.borderColor='var(--weekly-border)';
+
+  info.tasks.forEach(t => {
+    const key = d+':'+t;
+    const done = state.weekly[key]||false;
+    const item = document.createElement('div');
+    item.className = 'item'+(done?' done':'');
+    item.innerHTML = `<div class="checkbox">${done?'✓':''}</div><div><div class="item-name">${t}</div></div>`;
+    item.onclick = function(){
+      const k = currentWeekDay+':'+this.querySelector('.item-name').textContent.trim();
+      state.weekly[k]=!state.weekly[k];
+      this.classList.toggle('done',state.weekly[k]);
+      this.querySelector('.checkbox').textContent=state.weekly[k]?'✓':'';
+      ss(weekKey,state.weekly);
+      updateProgress();
+      renderWeekNav();
+    };
+    card.appendChild(item);
+  });
+  container.appendChild(card);
+}
+
+// ── PROGRESS ──
+function updateProgress() {
+  const dItems = document.querySelectorAll('#panel-daily .item');
+  const dDone = [...dItems].filter(e=>e.classList.contains('done')).length;
+  const dPct = dItems.length ? Math.round(dDone/dItems.length*100):0;
+  document.getElementById('dPct').textContent = dPct+'%';
+  document.getElementById('dBar').style.width = dPct+'%';
+
+  const allTasks = [1,2,3,4,5,6].flatMap(d=>WEEKS[d].tasks.map(t=>d+':'+t));
+  const wDone = allTasks.filter(k=>state.weekly[k]).length;
+  const wPct = Math.round(wDone/allTasks.length*100);
+  document.getElementById('wPct').textContent = wPct+'%';
+  document.getElementById('wBar').style.width = wPct+'%';
+
+  if(dDone===dItems.length && dItems.length>0) confetti();
+}
+
+// ── RESETS ──
+function resetDaily(){
+  if(!confirm('Resetar checklist diário?')) return;
+  state.daily={};ss(todayKey,{});
+  document.querySelectorAll('#panel-daily .item').forEach(el=>{el.classList.remove('done');el.querySelector('.checkbox').textContent='';});
+  updateProgress();
+}
+function resetWeekly(){
+  if(!confirm('Resetar a semana toda?')) return;
+  state.weekly={};ss(weekKey,{});
+  renderWeekNav(); renderWeekContent(currentWeekDay); updateProgress();
+}
+function resetPanel(type,key){
+  if(!confirm('Resetar?')) return;
+  state[type]={};ss(key,{});
+  document.querySelectorAll('#panel-'+type+' .item').forEach(el=>{el.classList.remove('done');el.querySelector('.checkbox').textContent='';});
+  updateProgress();
+}
+function resetShoes(){
+  state.shoes={};ss(shoesKey,{});
+  document.querySelectorAll('#shoeSteps .step').forEach(el=>el.classList.remove('done'));
+}
+
+// ── TAB SWITCH ──
+function switchTab(type,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('active','daily','weekly','heavy');});
+  document.getElementById('panel-'+type).classList.add('active');
+  btn.classList.add('active');
+  if(['daily','weekly','heavy'].includes(type)) btn.classList.add(type);
+}
+
+// ── CONFETTI ──
+function confetti(){
+  const c=document.getElementById('cfwrap'); c.innerHTML='';
+  const cols=['#e8632a','#2a7ae8','#8b2ae8','#e8a82a','#2ac862'];
+  for(let i=0;i<35;i++){
+    const p=document.createElement('div'); p.className='cp';
+    p.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${cols[i%5]};animation-delay:${Math.random()*0.4}s;animation-duration:${1.2+Math.random()*0.8}s`;
+    c.appendChild(p);
+  }
+  setTimeout(()=>c.innerHTML='',2500);
+}
+
+// ── INSTALL BANNER ──
+function showInstallHelp(){
+  document.getElementById('installModal').style.display='flex';
+}
+function dismissBanner(){
+  document.getElementById('installBanner').style.display='none';
+  localStorage.setItem('install-dismissed','1');
+}
+
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.navigator.standalone === true;
+const wasDismissed = localStorage.getItem('install-dismissed');
+if(isIOS && !isStandalone && !wasDismissed){
+  document.getElementById('installBanner').style.display='flex';
+}
+
+// ── SERVICE WORKER ──
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ── INIT ──
+initItems();
+renderWeekNav();
+renderWeekContent(currentWeekDay);
+updateProgress();
+</script>
+</body>
+</html>
